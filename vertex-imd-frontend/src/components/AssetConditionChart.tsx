@@ -1,61 +1,53 @@
-import React from 'react'
-import { useQuery } from '@tanstack/react-query'
-import axios from 'axios'
-import { ChevronRightIcon } from '@heroicons/react/20/solid'
+import React, { useEffect, useRef } from 'react';
+import Chart from 'chart.js/auto';
 
-interface Asset {
-  id: number
-  asset_id: string
-  asset_type: string
-  status: string
-  estimated_condition: number
-  maintenance_cost: number
+interface AssetConditionChartProps {
+  data: { assetType: string; averageCondition: number }[];
 }
 
-async function fetchAssets(): Promise<Asset[]> {
-  const response = await axios.get('/api/assets/')
-  return response.data
-}
+export default function AssetConditionChart({ data }: AssetConditionChartProps) {
+  const chartRef = useRef<HTMLCanvasElement | null>(null);
+  const chartInstance = useRef<Chart | null>(null);
 
-export default function AssetList() {
-  const { data: assets, isLoading, error } = useQuery<Asset[], Error>(['assets'], fetchAssets)
+  useEffect(() => {
+    if (chartRef.current) {
+      const ctx = chartRef.current.getContext('2d');
+      if (ctx) {
+        if (chartInstance.current) {
+          chartInstance.current.destroy();
+        }
 
-  if (isLoading) return <div className="text-center">Loading...</div>
-  if (error) return <div className="text-center text-red-500">Error: {error.message}</div>
+        chartInstance.current = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: data.map(item => item.assetType),
+            datasets: [{
+              label: 'Average Condition',
+              data: data.map(item => item.averageCondition),
+              backgroundColor: 'rgba(75, 192, 192, 0.6)',
+              borderColor: 'rgba(75, 192, 192, 1)',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 1
+              }
+            }
+          }
+        });
+      }
+    }
 
-  return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
-      <ul role="list" className="divide-y divide-gray-200">
-        {assets?.map((asset) => (
-          <li key={asset.id}>
-            <a href="#" className="block hover:bg-gray-50">
-              <div className="px-4 py-4 sm:px-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-indigo-600 truncate">{asset.asset_type}</p>
-                  <div className="ml-2 flex-shrink-0 flex">
-                    <p className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      asset.status === 'operational' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {asset.status}
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-2 sm:flex sm:justify-between">
-                  <div className="sm:flex">
-                    <p className="flex items-center text-sm text-gray-500">
-                      ID: {asset.asset_id}
-                    </p>
-                  </div>
-                  <div className="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                    <p>Condition: {asset.estimated_condition.toFixed(2)}</p>
-                    <p className="ml-4">Cost: ${asset.maintenance_cost.toFixed(2)}</p>
-                  </div>
-                </div>
-              </div>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
+    return () => {
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+      }
+    };
+  }, [data]);
+
+  return <canvas ref={chartRef} />;
 }

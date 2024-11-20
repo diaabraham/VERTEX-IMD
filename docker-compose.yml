@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: gunicorn civic_dashboard.wsgi:application --bind 0.0.0.0:8000
+    volumes:
+      - .:/code
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    environment:
+      - DATABASE_URL=postgis://civic_user:civic_password@db:5432/civic_dashboard
+      - REDIS_URL=redis://redis:6379/0
+
+  db:
+    image: postgis/postgis:13-3.1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=vertex_imd
+      - POSTGRES_USER=vertex_user
+      - POSTGRES_PASSWORD=vertex_password
+  redis:
+    image: redis:6.2
+
+
+  celery:
+    build: .
+    command: celery -A civic_dashboard worker -l info
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+      - redis
+
+    celery-beat:
+      build: .
+      command: celery -A civic_dashboard beat -l info
+      volumes:
+        - .:/app
+      depends_on:
+        - db
+        - redis
+
+  volumes:
+    postgres_data:
