@@ -7,6 +7,12 @@ function Settings({ onDataImport }) {
   const handleFileChange = (event) => {
     setFile(event.target.files[0]);
     setError(null);
+  return (
+    <div>
+      <h2>Settings</h2>
+      <button onClick={onDataImport}>Refresh Data</button>
+    </div>
+  );
   };
 
   const validateData = (data) => {

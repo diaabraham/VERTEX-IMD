@@ -1,3 +1,12 @@
+const { contextBridge, ipcRenderer } = require('electron');
+
+console.log('Preload script is running');
+
+contextBridge.exposeInMainWorld('api', {
+  getInfrastructure: () => ipcRenderer.invoke('get-infrastructure'),
+  addInfrastructure: (data) => ipcRenderer.invoke('add-infrastructure', data)
+});
+
 window.addEventListener('DOMContentLoaded', () => {
   const replaceText = (selector, text) => {
     const element = document.getElementById(selector)
@@ -8,10 +17,3 @@ window.addEventListener('DOMContentLoaded', () => {
     replaceText(`${dependency}-version`, process.versions[dependency])
   }
 })
-
-const { contextBridge, ipcRenderer } = require('electron');
-
-contextBridge.exposeInMainWorld('api', {
-  getInfrastructure: () => ipcRenderer.invoke('get-infrastructure'),
-  addInfrastructure: (data) => ipcRenderer.invoke('add-infrastructure', data)
-});

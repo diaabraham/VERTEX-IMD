@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { Sequelize, DataTypes } = require('sequelize');
 
@@ -17,30 +17,31 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+  mainWindow.webContents.openDevTools(); // This will always open DevTools
 
-  if (process.env.NODE_ENV === 'development') {
-    mainWindow.webContents.openDevTools();
-  }
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('Window loaded');
+  });
 }
 
 app.whenReady().then(() => {
   createWindow();
   initDatabase();
-
-  app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
 });
 
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
+app.on('activate', function () {
+  if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
 async function initDatabase() {
   try {
     sequelize = new Sequelize({
       dialect: 'sqlite',
-      storage: 'database.sqlite',
+      storage: path.join(__dirname, 'database.sqlite'),
       logging: false
     });
 
@@ -74,7 +75,7 @@ async function initDatabase() {
         return await Infrastructure.findAll();
       } catch (error) {
         console.error('Error fetching infrastructure:', error);
-        throw error;
+        return [];
       }
     });
 
@@ -83,19 +84,11 @@ async function initDatabase() {
         return await Infrastructure.create(data);
       } catch (error) {
         console.error('Error adding infrastructure:', error);
-        throw error;
+        return null;
       }
     });
 
   } catch (error) {
     console.error('Unable to connect to the database:', error);
-    dialog.showErrorBox('Database Error', 'Unable to connect to the database. The application will now exit.');
-    app.quit();
   }
 }
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  dialog.showErrorBox('Uncaught Exception', `An unexpected error occurred: ${error.message}`);
-  app.quit();
-});

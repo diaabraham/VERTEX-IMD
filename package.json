@@ -3,27 +3,35 @@
   "version": "0.1.0",
   "main": "main.js",
   "scripts": {
-  "start": "webpack && electron .",
-  "build": "webpack && electron-builder"
-},
+    "start": "electron .",
+    "build": "webpack --mode production && electron-builder",
+    "dev": "concurrently \"npm run watch\" \"npm run start\"",
+    "watch": "webpack --mode development --watch",
+    "start-electron": "electron ."
+  },
   "dependencies": {
-    "@babel/preset-react": "^7.25.9",
     "@tensorflow/tfjs": "^3.21.0",
-    "babel-loader": "^9.2.1",
-    "chart.js": "^3.7.0",
-    "leaflet": "^1.7.1",
+    "chart.js": "^3.9.1",
+    "leaflet": "^1.9.4",
     "react": "^17.0.2",
-    "react-chartjs-2": "^4.0.0",
+    "react-chartjs-2": "^4.3.1",
     "react-dom": "^17.0.2",
-    "react-leaflet": "^3.2.2",
+    "react-leaflet": "^3.2.5",
     "react-router-dom": "^6.28.0",
     "sequelize": "^6.6.5",
-    "sqlite3": "^5.0.2",
-    "webpack": "^5.96.1"
+    "sqlite3": "^5.0.2"
   },
   "devDependencies": {
-    "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
+    "@babel/core": "^7.22.5",
+    "@babel/preset-env": "^7.22.5",
+    "@babel/preset-react": "^7.22.5",
+    "babel-loader": "^9.1.2",
+    "concurrently": "^8.2.2",
+    "css-loader": "^6.8.1",
+    "electron": "^25.2.0",
+    "electron-builder": "^24.4.0",
+    "style-loader": "^3.3.3",
+    "webpack": "^5.88.0",
     "webpack-cli": "^5.1.4"
   },
   "build": {
@@ -35,8 +43,12 @@
       "target": "nsis"
     }
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "infrastructure",
+    "monitoring",
+    "dashboard"
+  ],
+  "author": "Your Name",
   "license": "ISC",
-  "description": ""
+  "description": "Vertex Infrastructure Monitoring Dashboard"
 }
