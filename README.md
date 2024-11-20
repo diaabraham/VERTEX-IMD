@@ -18,4 +18,4 @@ Real-time infrastructure tracking and predictive maintenance solution.
 5. Start server: `python manage.py runserver`
 
 ### Contributors
-Ibrahim - Founder
+Abraham Dia - Founder
