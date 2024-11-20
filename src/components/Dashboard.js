@@ -1,8 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { predictMaintenanceNeeds, prioritizeMaintenanceTasks } from '../utils/dataProcessing';
 
 function Dashboard({ infrastructure }) {
+  const [maintenancePredictions, setMaintenancePredictions] = useState([]);
+  const [prioritizedTasks, setPrioritizedTasks] = useState([]);
+
+  useEffect(() => {
+    async function processData() {
+      const model = await predictMaintenanceNeeds(infrastructure);
+      const predictions = infrastructure.map(item => ({
+        ...item,
+        maintenanceNeeded: model.predict(tf.tensor2d([[item.age, item.lastMaintenanceDaysAgo, item.usageLevel]])).dataSync()[0] > 0.5
+      }));
+      setMaintenancePredictions(predictions);
+
+      const prioritized = prioritizeMaintenanceTasks(infrastructure);
+      setPrioritizedTasks(prioritized);
+    }
+
+    processData();
+  }, [infrastructure]);
+
   const statusCounts = infrastructure.reduce((acc, item) => {
     acc[item.status] = (acc[item.status] || 0) + 1;
     return acc;
@@ -35,6 +55,18 @@ function Dashboard({ infrastructure }) {
           ))}
         </MapContainer>
       </div>
+      <h2>Maintenance Predictions</h2>
+      <ul>
+        {maintenancePredictions.map(item => (
+          <li key={item.id}>{item.name}: {item.maintenanceNeeded ? 'Needs maintenance' : 'No maintenance needed'}</li>
+        ))}
+      </ul>
+      <h2>Prioritized Maintenance Tasks</h2>
+      <ol>
+        {prioritizedTasks.map(item => (
+          <li key={item.id}>{item.name} (Risk Score: {item.riskScore.toFixed(2)})</li>
+        ))}
+      </ol>
     </div>
   );
 }

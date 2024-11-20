@@ -1,10 +1,9 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const { Sequelize, DataTypes } = require('sequelize');
 
 let mainWindow;
-let db;
+let sequelize;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -20,9 +19,7 @@ function createWindow() {
   mainWindow.loadFile('index.html');
 
   if (process.env.NODE_ENV === 'development') {
-    require('electron-reload')(__dirname, {
-      electron: path.join(__dirname, 'node_modules', '.bin', 'electron')
-    });
+    mainWindow.webContents.openDevTools();
   }
 }
 
@@ -39,28 +36,66 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-function initDatabase() {
-  const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: 'database.sqlite'
-  });
+async function initDatabase() {
+  try {
+    sequelize = new Sequelize({
+      dialect: 'sqlite',
+      storage: 'database.sqlite',
+      logging: false
+    });
 
-  const Infrastructure = sequelize.define('Infrastructure', {
-    name: DataTypes.STRING,
-    type: DataTypes.STRING,
-    status: DataTypes.STRING,
-    lastMaintenance: DataTypes.DATE
-  });
+    await sequelize.authenticate();
+    console.log('Database connection has been established successfully.');
 
-  sequelize.sync().then(() => {
-    console.log('Database initialized');
-  });
+    const Infrastructure = sequelize.define('Infrastructure', {
+      name: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      type: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      status: {
+        type: DataTypes.STRING,
+        allowNull: false
+      },
+      lastMaintenance: {
+        type: DataTypes.DATE,
+        allowNull: false
+      }
+    });
 
-  ipcMain.handle('get-infrastructure', async () => {
-    return await Infrastructure.findAll();
-  });
+    await sequelize.sync();
+    console.log('Database synchronized successfully.');
 
-  ipcMain.handle('add-infrastructure', async (event, data) => {
-    return await Infrastructure.create(data);
-  });
+    ipcMain.handle('get-infrastructure', async () => {
+      try {
+        return await Infrastructure.findAll();
+      } catch (error) {
+        console.error('Error fetching infrastructure:', error);
+        throw error;
+      }
+    });
+
+    ipcMain.handle('add-infrastructure', async (event, data) => {
+      try {
+        return await Infrastructure.create(data);
+      } catch (error) {
+        console.error('Error adding infrastructure:', error);
+        throw error;
+      }
+    });
+
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    dialog.showErrorBox('Database Error', 'Unable to connect to the database. The application will now exit.');
+    app.quit();
+  }
 }
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  dialog.showErrorBox('Uncaught Exception', `An unexpected error occurred: ${error.message}`);
+  app.quit();
+});

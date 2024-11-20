@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "main": "main.js",
   "scripts": {
-    "start": "webpack && electron .",
-    "build": "webpack && electron-builder"
-  },
+  "start": "webpack && electron .",
+  "build": "webpack && electron-builder"
+},
   "dependencies": {
     "@babel/preset-react": "^7.25.9",
-    "@tensorflow/tfjs": "^3.9.0",
+    "@tensorflow/tfjs": "^3.21.0",
     "babel-loader": "^9.2.1",
     "chart.js": "^3.7.0",
     "leaflet": "^1.7.1",
